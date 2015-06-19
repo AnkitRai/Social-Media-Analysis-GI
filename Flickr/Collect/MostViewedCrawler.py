@@ -5,34 +5,44 @@ import os
 import sys
 
 def get_comments(photo_id):
+	#The api for flickr.photos.comments.getList
 	apiurl = 'https://api.flickr.com/services/rest/?method=flickr.photos.comments.getList&api_key=25541b9c40a64b6fac3cc21145bc7400&photo_id='+photo_id+'&format=json&nojsoncallback=1'
 	urllib.urlretrieve(apiurl, newpath+'/'+str(ctr)+'.json')
 	with open(newpath+'/'+str(ctr)+'.json') as data_file:
 		data = json.load(data_file)
 
 	output = open(newpath+'/'+str(ctr)+'_comment.txt', 'w')
+	#parse json file to get the 'content' part
 
 	if data['comments'].get('comment'):						#Test if the comment is null
 		for content in data['comments']['comment']:
-			output.write(content['_content'].encode('ascii', 'ignore'))
+			#Take each comments out and remove noun charecters (like Emoji)
+			line = content['_content'].encode('ascii', 'ignore')
+			#Some comments have new lines with it. Better to get rid of them
+			line = line.replace('\n',' ')
+			output.write(line+'\n')
 
 	output.close()
 
 def get_stat(photo_id, output):
 	#favs
+	#The api for flickr.favorites.getList
 	apiurl = 'https://api.flickr.com/services/rest/?method=flickr.photos.getFavorites&api_key=25541b9c40a64b6fac3cc21145bc7400&photo_id='+photo_id+'&format=json&nojsoncallback=1'
 	urllib.urlretrieve(apiurl, newpath+'/'+str(ctr)+'.json')
 	with open(newpath+'/'+str(ctr)+'.json') as data_file:
 		data = json.load(data_file)
 
+	#parse json file to get the 'total' part
 	output.write(data['photo']['total']+'\n')
 
 	#comments
+	#The api for flickr.photos.getInfo
 	apiurl = 'https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=25541b9c40a64b6fac3cc21145bc7400&photo_id='+photo_id+'&format=json&nojsoncallback=1'
 	urllib.urlretrieve(apiurl, newpath+'/'+str(ctr)+'.json')
 	with open(newpath+'/'+str(ctr)+'.json') as data_file:
 		data = json.load(data_file)
 
+	#parse json file to get the 'total' part
 	output.write(data['photo']['comments']['_content']+'\n')
 
 	output.close()
@@ -41,22 +51,25 @@ def done():
 	sys.exit()
 
 def main():
-
+	'''
+	Trys for different searching key words goes in here
+	'''
 	#text = ['green+roof','%22raingarden%22','permeable+pavement','bioswale','green+corridor']
 	#text = ['permeable+court', '%22green%20wall%22%20living%20%20architecture', '%22street+tree%22+%22green+infrastructure%22', 'rainwater+storage', '%22urban%20landscape%22%20park']
-	#text = ['rain+garden'] #stopword = '-flower%2C-drop%2C-flowers%2C-leaves'
+	text = ['rain+garden'] 
+	stopword = '-droplet%2C-drop%2C-leaves'  #Get rid of the tags better not appear
 	#not work: tags = ['rain+garden%2Cgreen+infrastructure']
-	tags = ['bioswale%2C-text']
+	#tags = ['bioswale%2C-text']
 
 	
 	global ctr 
-	ctr = 1	#ctr = 0 #500 when pagenumber is 2 and so on
+	ctr = 1	
 
 	pagenumber = 1
 	while(1):
-		for term in tags:
+		for term in text:
 			#apiurl_withtag = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=25541b9c40a64b6fac3cc21145bc7400&tags='+term+'&text='+term+'&sort=relevance&privacy_filter=1&content_type=1&extras=views&per_page=500&format=json&nojsoncallback=1'
-			apiurl = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=25541b9c40a64b6fac3cc21145bc7400&tags='+term+'&tag_mode=all&sort=relevance&privacy_filter=1&extras=views&per_page=500&&page='+str(pagenumber)+'&format=json&nojsoncallback=1'
+			apiurl = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=25541b9c40a64b6fac3cc21145bc7400&text='+term+'&tags='+stopword+'&tag_mode=all&sort=relevance&privacy_filter=1&extras=views&per_page=500&&page='+str(pagenumber)+'&format=json&nojsoncallback=1'
 			urllib.urlretrieve(apiurl, term+str(pagenumber)+'.json')
 
 			with open(term+str(pagenumber)+'.json') as data_file:
@@ -85,9 +98,9 @@ def main():
 					output.write(photo['views']+'\n')
 					get_stat(photo['id'], output)
 
+					#Do this until we get 350 data
+					if(ctr == 350): done()
 					ctr += 1
-
-			    	if(ctr == 350): done()
 			    		
 
 			pagenumber += 1 
@@ -97,8 +110,10 @@ def main():
 if __name__ == '__main__':
     main()
 
-#https://www.flickr.com/search/?text=%22street%20tree%22%20%22green%20infrastructure%22
-#https://www.flickr.com/search/?text=%22green%20wall%22%20living%20%20architecture
-#https://www.flickr.com/search/?text=%22urban%20landscape%22%20park
+'''
+Difficult to retrive: photo with people in it, which conveys the idea of green economy / green community
 
-#most can be gone through 2 pages
+https://www.flickr.com/search/?text=%22street%20tree%22%20%22green%20infrastructure%22
+https://www.flickr.com/search/?text=%22green%20wall%22%20living%20%20architecture
+https://www.flickr.com/search/?text=%22urban%20landscape%22%20park
+'''
