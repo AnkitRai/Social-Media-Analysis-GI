@@ -34,11 +34,11 @@ df['one']=1
 df['datetime']=df.time.apply(lambda x: time.strftime('%Y-%m-%d %H:%M:%S',time.strptime(x,'%a %b %d %H:%M:%S +0000 %Y')))
 
 # remove rubbish words
-rubbish=['http','RT','@','#','!',':','.','-',',','//t','/but','one','via','\'s','(',')','?',';','&','"','n\'t','\'m']
+rubbish = ['http','RT','@','#','!',':','.','-',',','//t','/but','one','via','\'s','(',')','?',';','&','"','n\'t','\'m']
 for item in rubbish:
-    df.text=df.text.str.replace(item,'')
-df['text']=df.text.str.lower()    
-all_text=' '.join(df.text.tolist())
+    df.text = df.text.str.replace(item,'')
+df['text'] = df.text.str.lower()    
+all_text = ' '.join(df.text.tolist())
 
 # tokenize 
 token_text= nltk.word_tokenize(all_text)
