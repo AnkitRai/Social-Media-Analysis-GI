@@ -1,4 +1,5 @@
 import urllib
+import urllib2
 import json
 import pandas as pd
 import datetime
@@ -81,15 +82,28 @@ def count_cmt(photo_id):
 				time_distribution['post'].append(0)
 
 
+def count_geo(photo_id):
+	apiurl = 'https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=25541b9c40a64b6fac3cc21145bc7400&photo_id='+photo_id+'&format=json&nojsoncallback=1'
+	req = urllib2.Request(apiurl)
+	f = urllib2.urlopen(req)
+	post = json.loads(f.read())
+	place = post['photo']['owner']['location']
+	if(place.endswith('U.S.A.')):
+		if(place in city_distribution['city']):
+				idx = city_distribution['city'].index(place)
+				city_distribution['count'][idx] += 1
 
+		else:
+			city_distribution['city'].append(place)
+			city_distribution['count'].append(1)
 
 
 def main():
 	# GI = [(text, tag, tagmode)]
-	GI = [('raingarden', '-people', 'all') , ('tree%20street%20city', 'tree%2Ctrees', 'or')]
-	#GI = [('bioswale', '-people', 'all')]#, ('tree%20street%20city', 'tree%2Ctrees', 'or')]	
-	for term in GI:
+	#GI = [('raingarden', '-people', 'all') , ('bioswale', '-people', 'all'), ('tree%20street%20city', 'tree%2Ctrees', 'or')]
+	GI = [('tree%20street%20city', 'tree%2Ctrees', 'or')]
 
+	for term in GI:
 		'''
 		print('Now crawling '+ term[0])
 		
@@ -101,6 +115,12 @@ def main():
 		time_distribution['cmt'] = []
 		#time_distribution['total'] = []
 
+
+		global city_distribution
+		city_distribution = {}
+		city_distribution['city'] = []
+		city_distribution['count'] = []
+
 		pagenumber = 1
 		ctr = 0
 
@@ -109,7 +129,7 @@ def main():
 
 			apiurl = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=25541b9c40a64b6fac3cc21145bc7400&tags='+term[1]+'&tag_mode='+term[2]+'&text='+term[0]+'&sort=relevance&privacy_filter=1&extras=date_taken%2Cviews&per_page=500&&page='+str(pagenumber)+'&format=json&nojsoncallback=1'
 
-			urllib.urlretrieve(apiurl, term[0]+str(pagenumber)+'.json')
+			urllib.urlretrieve(apiurl, term[0]+str(pagenumber)+'_city.json')
 
 			with open(term[0]+str(pagenumber)+'.json') as data_file:
 				data = json.load(data_file)			
@@ -118,9 +138,13 @@ def main():
 				global photo_id
 				photo_id = photo['id']
 
+				
 				count_post(photo_id)
 				count_fav(photo_id)
 				count_cmt(photo_id)
+				
+
+				count_geo(photo_id)
 
 				ctr += 1
 				if(ctr%200 == 0): print(ctr)
@@ -128,32 +152,36 @@ def main():
 
 			#print(time_distribution)
 
+			with open('city_'+term[0]+".json", "w") as outfile:
+				json.dump(city_distribution, outfile)
+
 			with open('data_'+term[0]+'.json', 'w') as outfile:
-				json.dump(time_distribution, outfile)
+													json.dump(time_distribution, outfile)
+
 
 			if(pagenumber == data['photos']['pages']): 
 				print(term[0]+' has been crawled!')
-				with open('data_'+term[0]+".json", "w") as outfile:
-					json.dump(time_distribution, outfile)
+				with open('city_'+term[0]+".json", "w") as outfile:
+					json.dump(city_distribution, outfile)
 				break
 
 			pagenumber += 1 
-			
-		'''
 		
+
+		'''
 		print('Now disposing '+ term[0])
-		with open('data_'+term[0]+".json") as infile:
+		with open('city_'+term[0]+".json") as infile:
 			data = json.load(infile)
 
 
 		df = pd.DataFrame.from_dict(data)
-		df = df.sort(['date'])
-		df = df.groupby(["date"]).sum()
-		df['total'] = df.sum(axis=1)
+		#df = df.sort(['date'])
+		df = df.groupby(["city"]).sum()
+		#df['total'] = df.sum(axis=1)
 		#print(pd)
-		df.to_csv(term[0]+'_count.csv')
+		df.to_csv(term[0]+'_region_count.csv')
 		
-
+		
 
 if __name__ == '__main__':
     main()
