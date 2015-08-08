@@ -1,0 +1,2 @@
+Very cool!  How did you do that???
+With Photoshop and ImageReady. You make a photoshop file with 1 layer for each image. In ImageReady you spread that out across as many  frames as you want for the animation and adjust the percentage that each is seen.  I'm sure there are freeware / shareware tools out there to do it as well.
