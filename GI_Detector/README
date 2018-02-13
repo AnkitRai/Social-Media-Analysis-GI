@@ -1,0 +1,26 @@
+
+
+README - 
+y --images 'path to test images' --path 'path to model'
+
+Files -
+helpers.py - utility module need to be in the working directory directory for doing heavy lifting
+
+detection.py - main detection algorithm
+
+
+
+Dependencies -
+
+scikit-learn
+h5py
+keras
+cpickle
+random
+glob
+argparse
+scipy
+numpy
+opencv (cv2)
+pandas
+matplotlib
